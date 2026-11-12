@@ -111,10 +111,7 @@
   <p class="msg err" id="notready" hidden data-i="notready"></p>
 
   <form id="form" class="card" novalidate>
-    <div class="row2">
-      <label class="f"><span data-i="date"></span><input type="date" id="date" required></label>
-      <label class="f"><span data-i="pin"></span><input type="password" id="pin" autocomplete="off" inputmode="text" required></label>
-    </div>
+    <label class="f"><span data-i="date"></span><input type="date" id="date" required></label>
     <div class="rule" id="rule"></div>
 
     <div class="players" id="players"></div>
@@ -306,7 +303,7 @@
     by.replaceChildren(...chosen.map((n) => new Option(n, n)));
     let remembered = ''; try { remembered = localStorage.getItem('mrml-me') || ''; } catch (e) {}
     by.value = chosen.includes(cur) ? cur : (chosen.includes(remembered) ? remembered : (chosen[0] || ''));
-    $('go').disabled = !!problem || !ENDPOINT || !$('pin').value.trim() || sending;
+    $('go').disabled = !!problem || !ENDPOINT || sending;
     lastProblem = problem;
     $('err').hidden = true;
   }
@@ -325,13 +322,11 @@
   document.querySelectorAll('.langs button').forEach((b) => b.addEventListener('click', () => { lang = b.dataset.lang; try { localStorage.setItem('mrml-lang', lang); } catch (e) {} applyLang(); }));
   $('pentoggle').addEventListener('click', () => { showPen = !showPen; seats.forEach((s) => { s.pen.hidden = !showPen; if (!showPen) s.penIn.value = ''; }); applyLang(); });
   $('date').addEventListener('input', update);
-  $('pin').addEventListener('input', update);
   $('note').addEventListener('input', update);
 
   // Today in the viewer's time zone.
   const now = new Date();
   $('date').value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
-  try { $('pin').value = localStorage.getItem('mrml-pin') || ''; } catch (e) {}
   if (!ENDPOINT) $('notready').hidden = false;
 
   const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
@@ -345,14 +340,14 @@
     if (!ENDPOINT || sending) return;
     const ps = read();
     const season = seasonFor($('date').value);
-    const payload = { id: subId, pin: $('pin').value.trim(), date: $('date').value, by: $('by').value, note: $('note').value.trim(), players: ps };
+    const payload = { id: subId, date: $('date').value, by: $('by').value, note: $('note').value.trim(), players: ps };
     sending = true; $('go').disabled = true; $('go').textContent = tr('sending');
     let failed = '';
     try {
       const r = await fetch(ENDPOINT, { method: 'POST', body: JSON.stringify(payload) });
       const res = await r.json();
       if (res.ok) {
-        try { localStorage.setItem('mrml-pin', payload.pin); if (payload.by) localStorage.setItem('mrml-me', payload.by); } catch (e) {}
+        try { if (payload.by) localStorage.setItem('mrml-me', payload.by); } catch (e) {}
         drawPreview($('donepreview'), pointsFor(ps, season));
         form.hidden = true; $('done').hidden = false; window.scrollTo(0, 0);
       } else {

@@ -4,7 +4,6 @@
  * After editing: Deploy → Manage deployments → ✏️ → Version: New version → Deploy (URL stays the same).
  */
 
-const LEAGUE_PIN = '改成你的口令';      // ← change me
 const GAMES_TAB = 'All_Games';
 const SEASONS_TAB = 'Dim_Seasons';
 const SHEET_ID = '1vcRSRL1m5N8vQ11yca-mJo3MCVBbzCCBS4IUNi5240E';
@@ -17,7 +16,6 @@ function doPost(e) {
   let body;
   try { body = JSON.parse(e.postData.contents); } catch (err) { return json_({ ok: false, code: 'bad_request' }); }
 
-  if (String(body.pin || '').trim() !== LEAGUE_PIN) return json_({ ok: false, code: 'bad_pin' });
 
   // Date: YYYY-MM-DD from the page.
   const m = String(body.date || '').match(/^(\d{4})-(\d{2})-(\d{2})$/);
