@@ -629,7 +629,7 @@
                     <th data-field="players"><span class="t-zh" lang="zh">选手</span><span class="t-ja" lang="ja">選手</span><span class="t-en" lang="en">Players</span></th>
                     <th class="num" data-field="total"><span class="t-zh" lang="zh">合计</span><span class="t-ja" lang="ja">合計</span><span class="t-en" lang="en">Total</span></th>
                     <th class="num" data-field="difference"><span class="t-zh" lang="zh">差额</span><span class="t-ja" lang="ja">差</span><span class="t-en" lang="en">Difference</span></th>
-                    <th data-field="likely"><span class="t-zh" lang="zh">可能原因</span><span class="t-ja" lang="ja">考えられる原因</span><span class="t-en" lang="en">Likely cause</span></th>
+                    <th data-field="likely"><span class="t-zh" lang="zh">备注 / 可能原因</span><span class="t-ja" lang="ja">備考 / 考えられる原因</span><span class="t-en" lang="en">Note / likely cause</span></th>
                   </tr>
                 </thead>
                 <tbody data-draw="checks-body"></tbody>
@@ -1091,7 +1091,7 @@
         out.push({
           row: g.row, season: Number(s.season_id), date: g.date,
           players: [1, 2, 3, 4].map((k) => g[`p${k}_name`]).join(' · '),
-          total, expected, difference,
+          total, expected, difference, note: g.note || '',
           likely: sticks ? 'Riichi sticks left on table?' : 'Check the scores'
         });
       }
@@ -1541,7 +1541,7 @@
         td(r.players);
         td(fmtInt(r.total), 'num');
         td((r.difference > 0 ? '+' : '−') + fmtInt(Math.abs(r.difference)), 'num ' + (r.difference < 0 ? 'mr-neg' : ''));
-        td(r.likely === 'Check the scores' ? t('请核对分数', 'スコアを確認', r.likely) : t('场上剩余的立直棒？', '供託のリーチ棒？', r.likely));
+        if (r.note) td(r.note); else td(r.likely === 'Check the scores' ? t('请核对分数', 'スコアを確認', r.likely) : t('场上剩余的立直棒？', '供託のリーチ棒？', r.likely));
         tbody.appendChild(tr);
       });
     });
@@ -2393,6 +2393,7 @@
           row['p' + k + '_penalty'] = num(c[b + 2]) || 0;
           if (!row['p' + k + '_name'] || row['p' + k + '_score'] == null || Number.isNaN(row['p' + k + '_score'])) ok = false;
         }
+        row.note = String(c[15] || '').trim();
         if (ok) rows.push(row);
       }
       return rows;

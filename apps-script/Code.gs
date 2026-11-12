@@ -49,8 +49,10 @@ function doPost(e) {
   // Season rules: the four scores must add up to 4 × starting points.
   const season = findSeason_(ss, iso);
   if (!season) return json_({ ok: false, code: 'no_season' });
+  // A game whose scores don't balance (foul, chombo…) is accepted only with a note explaining why.
+  const note = String(body.note || '').trim().slice(0, 300);
   const total = players.reduce((t, p) => t + p.score, 0);
-  if (total !== season.startPoints * 4) return json_({ ok: false, code: 'bad_total', total: total, expected: season.startPoints * 4 });
+  if (total !== season.startPoints * 4 && !note) return json_({ ok: false, code: 'bad_total', total: total, expected: season.startPoints * 4 });
 
   const lock = LockService.getScriptLock();
   lock.waitLock(20000);
@@ -72,8 +74,8 @@ function doPost(e) {
     if (last >= 2) sh.getRange(last, 1, 1, 13).copyTo(sh.getRange(target, 1, 1, 13), SpreadsheetApp.CopyPasteType.PASTE_FORMAT, false);
     if (!(prevDate instanceof Date)) sh.getRange(target, 1).setNumberFormat('@');
     sh.getRange(target, 1, 1, 13).setValues([row]);
-    // Who entered it and when — kept to the right of the game columns, ignored by the dashboard.
-    sh.getRange(target, 14, 1, 2).setValues([[new Date(), String(body.by || '').trim().slice(0, 40)]]);
+    // When, who entered it, and the note — kept to the right of the game columns (N, O, P).
+    sh.getRange(target, 14, 1, 3).setValues([[new Date(), String(body.by || '').trim().slice(0, 40), note]]);
     SpreadsheetApp.flush();
 
     if (sid) cache.put('sub:' + sid, '1', 21600);

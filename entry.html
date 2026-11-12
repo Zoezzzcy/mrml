@@ -75,6 +75,10 @@
   .pts.pos { color: var(--green); } .pts.neg { color: var(--red); }
   .pts.neg::before { content: '▼'; font-size: .8em; margin-right: 1px; }
 
+  textarea { font: 500 15px var(--font); color: var(--fg); background: var(--field); border: 1px solid var(--line); border-radius: 10px; padding: 10px 11px; width: 100%; min-height: 64px; resize: vertical; }
+  textarea:focus { outline: 2px solid var(--green); border-color: transparent; }
+  .need textarea { border-color: var(--red); background: var(--red-soft); }
+  .hint { font-size: 12px; font-weight: 600; color: var(--red); }
   .go { font: 800 17px var(--font); color: #fff; background: var(--red); border: 0; border-radius: 12px; padding: 14px; cursor: pointer; }
   .go:disabled { background: var(--grey); cursor: not-allowed; opacity: .7; }
   .msg { font-size: 14px; font-weight: 600; padding: 10px 12px; border-radius: 10px; }
@@ -120,6 +124,8 @@
 
     <div class="preview" id="preview" hidden></div>
 
+    <label class="f" id="notebox"><span data-i="note"></span><textarea id="note" maxlength="300"></textarea><span class="hint" id="notehint" data-i="notehint" hidden></span></label>
+
     <label class="f"><span data-i="by"></span><select id="by"></select></label>
 
     <p class="msg err" id="err" hidden></p>
@@ -164,6 +170,9 @@
     pen: ['罚分 pt', 'ペナルティ pt', 'Penalty pt'],
     total: ['四人合计', '4人合計', 'Total of four'],
     by: ['谁在录入', '入力者', 'Entered by'],
+    note: ['备注（可选：犯规、错和、供托等）', '備考（任意：チョンボ・供託など）', 'Note (optional: foul, chombo, sticks left…)'],
+    notehint: ['分数合计不平：请在备注里写明原因（例如：犯规、供托立直棒）才能提交。', '合計が合いません。理由を備考に書くと送信できます。', 'The scores don’t balance — explain why in the note to submit.'],
+    unbal: ['合计不平，已附备注', '合計不一致（備考あり）', 'Unbalanced, note added'],
     submit: ['提交这一局', 'この対局を送信', 'Submit this game'],
     sending: ['提交中…', '送信中…', 'Sending…'],
     saved: ['已记录！', '記録しました！', 'Saved!'],
@@ -178,7 +187,7 @@
     e_missing: ['请为四个位置都选好选手。', '4人全員の選手を選んでください。', 'Choose a player for all four seats.'],
     e_dup: ['同一个选手出现了两次。', '同じ選手が2回選ばれています。', 'The same player is chosen twice.'],
     e_score: ['得点要填整百的数字，例如 32,400。', '持ち点は100点単位で入力してください（例：32400）。', 'Scores must be in hundreds, e.g. 32400.'],
-    e_total: ['四人合计不对，请检查分数。', '4人合計が合いません。', 'The four scores don’t add up.'],
+    e_total: ['四人合计不对：请检查分数，或在备注里写明原因。', '4人合計が合いません。スコアを確認するか、備考に理由を書いてください。', 'The four scores don’t add up — check them, or explain why in the note.'],
     e_pin: ['联赛口令不对。', '合言葉が違います。', 'Wrong league code.'],
     e_net: ['没连上，请检查网络后再试。', '接続できませんでした。もう一度お試しください。', 'Couldn’t reach the sheet. Check your connection and try again.'],
     e_other: ['提交失败：{c}', '送信に失敗しました：{c}', 'Couldn’t save: {c}'],
@@ -280,7 +289,11 @@
     else if (ps.some((p) => !p.name)) problem = 'e_missing';
     else if (new Set(ps.map((p) => p.name.toLowerCase())).size < 4) problem = 'e_dup';
     else if (ps.some((p) => p.score === null || !Number.isFinite(p.score) || p.score % 100 !== 0 || !Number.isFinite(p.penalty))) problem = 'e_score';
-    else if (total !== season.start_points * 4) problem = 'e_total';
+    const note = $('note').value.trim();
+    const unbalanced = !!season && total !== season.start_points * 4;
+    if (!problem && unbalanced && !note) problem = 'e_total';
+    $('notebox').classList.toggle('need', !problem || problem === 'e_total' ? (unbalanced && !note) : false);
+    $('notehint').hidden = !(unbalanced && !note && ps.every((p) => p.name && Number.isFinite(p.score)));
     const anyScore = ps.some((p) => p.score !== null);
     if (season && anyScore) {
       const diff = total - season.start_points * 4;
@@ -315,6 +328,7 @@
   $('pentoggle').addEventListener('click', () => { showPen = !showPen; seats.forEach((s) => { s.pen.hidden = !showPen; if (!showPen) s.penIn.value = ''; }); applyLang(); });
   $('date').addEventListener('input', update);
   $('pin').addEventListener('input', update);
+  $('note').addEventListener('input', update);
 
   // Today in the viewer's time zone.
   const now = new Date();
@@ -333,7 +347,7 @@
     if (!ENDPOINT || sending) return;
     const ps = read();
     const season = seasonFor($('date').value);
-    const payload = { id: subId, pin: $('pin').value.trim(), date: $('date').value, by: $('by').value, players: ps };
+    const payload = { id: subId, pin: $('pin').value.trim(), date: $('date').value, by: $('by').value, note: $('note').value.trim(), players: ps };
     sending = true; $('go').disabled = true; $('go').textContent = tr('sending');
     let failed = '';
     try {
@@ -357,6 +371,7 @@
 
   $('again').addEventListener('click', () => {
     seats.forEach((s) => { s.score.value = ''; s.penIn.value = ''; });
+    $('note').value = '';
     subId = newId();
     $('done').hidden = true; form.hidden = false; update();
     seats[0].score.focus();
