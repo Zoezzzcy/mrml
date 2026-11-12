@@ -54,8 +54,11 @@ function doPost(e) {
     const sh = ss.getSheetByName(GAMES_TAB);
     const last = sh.getLastRow();
     const prevDate = last >= 2 ? sh.getRange(last, 1).getValue() : null;
-    // Match how dates are already kept in the sheet (real dates, or text like 7/11/2026).
-    const dateCell = prevDate instanceof Date ? new Date(y, mo - 1, d) : `${d}/${mo}/${y}`;
+    // Match how dates are already kept in the sheet. A real date is made at midnight in the
+    // SHEET's time zone, so it shows as the same day whatever time zone the script runs in.
+    const dateCell = prevDate instanceof Date
+      ? Utilities.parseDate(iso, ss.getSpreadsheetTimeZone(), 'yyyy-MM-dd')
+      : `${String(d).padStart(2, '0')}/${String(mo).padStart(2, '0')}/${y}`;
 
     const row = [dateCell];
     players.forEach((p) => row.push(p.name, p.score, p.penalty ? p.penalty : ''));
@@ -63,8 +66,13 @@ function doPost(e) {
     if (last >= 2) sh.getRange(last, 1, 1, 13).copyTo(sh.getRange(target, 1, 1, 13), SpreadsheetApp.CopyPasteType.PASTE_FORMAT, false);
     if (!(prevDate instanceof Date)) sh.getRange(target, 1).setNumberFormat('@');
     sh.getRange(target, 1, 1, 13).setValues([row]);
-    // When, who entered it, and the note — kept to the right of the game columns (N, O, P).
-    sh.getRange(target, 14, 1, 3).setValues([[new Date(), String(body.by || '').trim().slice(0, 40), note]]);
+    // Column N is the sheet's own "Total Point Check": carry its formula down like the rows above.
+    const prevN = last >= 2 ? sh.getRange(last, 14) : null;
+    if (prevN && prevN.getFormula()) prevN.copyTo(sh.getRange(target, 14));
+    else sh.getRange(target, 14).setValue(players.reduce((t, p) => t + p.score, 0));
+    // When, who entered it, and the note — in O, P, Q.
+    ensureHeaders_(sh);
+    sh.getRange(target, 15, 1, 3).setValues([[new Date(), String(body.by || '').trim().slice(0, 40), note]]);
     SpreadsheetApp.flush();
 
     if (sid) cache.put('sub:' + sid, '1', 21600);
@@ -74,19 +82,26 @@ function doPost(e) {
   }
 }
 
+function ensureHeaders_(sh) {
+  const h = sh.getRange(1, 15, 1, 3);
+  const v = h.getValues()[0];
+  if (!v[0] && !v[1] && !v[2]) h.setValues([['Entered_At', 'Entered_By', 'Note']]);
+}
+
 function findSeason_(ss, iso) {
+  const tz = ss.getSpreadsheetTimeZone();
   const sh = ss.getSheetByName(SEASONS_TAB);
   const values = sh.getDataRange().getValues();
   for (let i = 1; i < values.length; i++) {
     const r = values[i];
-    const start = toIso_(r[2]), end = toIso_(r[3]);
+    const start = toIso_(r[2], tz), end = toIso_(r[3], tz);
     if (start && end && start <= iso && iso <= end) return { id: r[0], startPoints: Number(r[4]) };
   }
   return null;
 }
 
-function toIso_(v) {
-  if (v instanceof Date) return Utilities.formatDate(v, Session.getScriptTimeZone(), 'yyyy-MM-dd');
+function toIso_(v, tz) {
+  if (v instanceof Date) return Utilities.formatDate(v, tz, 'yyyy-MM-dd');
   const s = String(v || '').trim();
   let m = s.match(/^(\d{4})-(\d{1,2})-(\d{1,2})/);
   if (m) return `${m[1]}-${m[2].padStart(2, '0')}-${m[3].padStart(2, '0')}`;
@@ -98,3 +113,4 @@ function toIso_(v) {
 function json_(o) {
   return ContentService.createTextOutput(JSON.stringify(o)).setMimeType(ContentService.MimeType.JSON);
 }
+

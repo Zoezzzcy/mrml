@@ -2393,7 +2393,7 @@
           row['p' + k + '_penalty'] = num(c[b + 2]) || 0;
           if (!row['p' + k + '_name'] || row['p' + k + '_score'] == null || Number.isNaN(row['p' + k + '_score'])) ok = false;
         }
-        row.note = String(c[15] || '').trim();
+        row.note = String(c[16] || '').trim();
         if (ok) rows.push(row);
       }
       return rows;
