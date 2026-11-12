@@ -8,7 +8,9 @@
 <title>MRML League</title>
 <script>try{if(!/[?&]desktop/.test(location.search)&&matchMedia("(max-width: 640px)").matches)location.replace("mobile.html"+location.hash)}catch(e){}</script>
 
-<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}  .mr-enter { display: inline-flex; align-items: center; gap: 4px; padding: 7px 14px; border-radius: 999px; background: #CD0000; color: #fff !important; font-weight: 700; font-size: 14px; text-decoration: none; white-space: nowrap; }
+  .mr-enter:hover { background: #A80000; }
+</style>
 </head>
 <body>
 <link rel="preconnect" href="https://fonts.googleapis.com">
@@ -478,6 +480,7 @@
       <button type="button" class="mr-tabbtn" role="tab" data-tab="view-players" aria-controls="view-players"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="4" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M4.5 20c1.2-3.6 4-5.5 7.5-5.5s6.3 1.9 7.5 5.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span class="t-zh" lang="zh">个人成绩</span><span class="t-ja" lang="ja">個人成績</span><span class="t-en" lang="en">Player stats</span></button>
     </nav>
     <div class="mr-navright">
+      <a class="mr-enter" href="entry.html"><span class="t-zh" lang="zh">＋ 录入成绩</span><span class="t-ja" lang="ja">＋ 成績入力</span><span class="t-en" lang="en">+ Enter a game</span></a>
       <div class="mr-langs" role="group" aria-label="Language / 语言 / 言語">
         <button type="button" class="mr-lang" data-lang="zh" lang="zh">中文</button>
         <button type="button" class="mr-lang" data-lang="ja" lang="ja">日本語</button>

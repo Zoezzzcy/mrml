@@ -1,0 +1,384 @@
+<!doctype html>
+<html lang="zh">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<meta name="theme-color" content="#126724">
+<title>MRML 录分</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Noto+Sans:wght@400;600;700;800&family=Noto+Sans+JP:wght@400;700&family=Noto+Sans+SC:wght@400;600;700&display=swap">
+<style>
+  :root {
+    --bg: #F3F5F3; --card: #FFFFFF; --fg: #1A211C; --muted: #5C665F; --line: #DCE2DD; --field: #FFFFFF;
+    --green: #126724; --green-soft: #E5F0E7; --red: #CD0000; --red-soft: #FBE7E7; --grey: #8F9691;
+    --r1: #28A745; --r2: #17A2B8; --r3: #6C757D; --r4: #DC3545;
+    --font: 'Noto Sans', 'Noto Sans SC', 'Noto Sans JP', system-ui, sans-serif;
+    color-scheme: light;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root:not([data-theme="light"]) {
+      --bg: #101511; --card: #1A211C; --fg: #EEF2EF; --muted: #A3ADA6; --line: #2E3831; --field: #121813;
+      --green: #3FA157; --green-soft: #183622; --red: #FF5A5A; --red-soft: #3A1717; --grey: #8F9691; color-scheme: dark;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #101511; --card: #1A211C; --fg: #EEF2EF; --muted: #A3ADA6; --line: #2E3831; --field: #121813;
+    --green: #3FA157; --green-soft: #183622; --red: #FF5A5A; --red-soft: #3A1717; --grey: #8F9691; color-scheme: dark;
+  }
+  :root { padding-top: env(safe-area-inset-top, 0px); padding-bottom: env(safe-area-inset-bottom, 0px); }
+  * { box-sizing: border-box; }
+  [hidden] { display: none !important; }
+  body { margin: 0; background: var(--bg); color: var(--fg); font: 15px/1.5 var(--font);
+    padding-left: max(16px, env(safe-area-inset-left, 0px)); padding-right: max(16px, env(safe-area-inset-right, 0px)); }
+  .wrap { max-width: 560px; margin: 0 auto; padding-block: 14px 40px; display: flex; flex-direction: column; gap: 14px; }
+
+  header { display: flex; align-items: center; gap: 10px; }
+  header img { width: 34px; height: auto; border-radius: 6px; }
+  header .word { font-weight: 800; font-size: 20px; letter-spacing: .02em; }
+  header .back { margin-left: auto; color: var(--green); font-weight: 700; text-decoration: none; font-size: 14px; }
+  .langs { display: inline-flex; border: 1px solid var(--line); border-radius: 999px; padding: 2px; background: var(--card); }
+  .langs button { border: 0; background: none; color: var(--muted); font: 600 12px var(--font); padding: 4px 9px; border-radius: 999px; cursor: pointer; }
+  .langs button[aria-pressed="true"] { background: var(--green); color: #fff; }
+
+  h1 { margin: 0; font-size: 24px; font-weight: 800; text-wrap: balance; }
+  h1::after { content: ''; display: block; width: 56px; height: 3px; margin-top: 6px; border-radius: 2px;
+    background: linear-gradient(90deg, var(--red) 0 50%, var(--green) 50% 100%); }
+  .sub { margin: 0; color: var(--muted); font-size: 13px; }
+
+  .card { background: var(--card); border: 1px solid var(--line); border-radius: 14px; padding: 14px; display: flex; flex-direction: column; gap: 12px; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; }
+  label.f { display: flex; flex-direction: column; gap: 4px; font-size: 12px; font-weight: 700; color: var(--muted); min-width: 0; }
+  input, select { font: 600 16px var(--font); color: var(--fg); background: var(--field); border: 1px solid var(--line); border-radius: 10px; padding: 10px 11px; width: 100%; min-width: 0; }
+  input:focus, select:focus { outline: 2px solid var(--green); outline-offset: 0; border-color: transparent; }
+  .rule { font-size: 12px; color: var(--muted); }
+  .rule b { color: var(--fg); }
+
+  .players { display: flex; flex-direction: column; gap: 10px; }
+  .p { display: grid; grid-template-columns: 26px minmax(0, 1.25fr) minmax(0, 1fr); gap: 8px; align-items: center; }
+  .p .n { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: 13px; background: var(--green-soft); color: var(--green); }
+  .p .new { grid-column: 2 / 4; }
+  .p input.score { text-align: right; font-variant-numeric: tabular-nums; }
+  .p .pen { grid-column: 2 / 4; display: grid; grid-template-columns: auto 1fr; gap: 8px; align-items: center; font-size: 12px; color: var(--muted); font-weight: 700; }
+  .p .pen input { padding: 6px 9px; font-size: 14px; }
+  .toggle { align-self: flex-start; border: 0; background: none; color: var(--green); font: 700 13px var(--font); padding: 0; cursor: pointer; }
+
+  .total { display: flex; justify-content: space-between; align-items: baseline; gap: 10px; padding: 10px 12px; border-radius: 10px; background: var(--bg); font-variant-numeric: tabular-nums; }
+  .total .v { font-weight: 800; font-size: 18px; }
+  .total.ok { background: var(--green-soft); } .total.ok .v { color: var(--green); }
+  .total.bad { background: var(--red-soft); } .total.bad .v { color: var(--red); }
+
+  .preview { display: flex; flex-direction: column; gap: 6px; }
+  .pr { display: grid; grid-template-columns: 28px 1fr auto; gap: 8px; align-items: center; font-variant-numeric: tabular-nums; }
+  .badge { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; background: var(--card); font-weight: 800; font-size: 12px; border: 2.5px solid; }
+  .pts { font-weight: 800; }
+  .pts.pos { color: var(--green); } .pts.neg { color: var(--red); }
+  .pts.neg::before { content: '▼'; font-size: .8em; margin-right: 1px; }
+
+  .go { font: 800 17px var(--font); color: #fff; background: var(--red); border: 0; border-radius: 12px; padding: 14px; cursor: pointer; }
+  .go:disabled { background: var(--grey); cursor: not-allowed; opacity: .7; }
+  .msg { font-size: 14px; font-weight: 600; padding: 10px 12px; border-radius: 10px; }
+  .msg.err { background: var(--red-soft); color: var(--red); }
+  .msg.info { background: var(--bg); color: var(--muted); }
+  .done { text-align: center; align-items: center; }
+  .done .big { font-size: 40px; line-height: 1; color: var(--green); }
+  .btns { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+  .btn2 { font: 700 15px var(--font); border-radius: 10px; padding: 10px 16px; border: 1px solid var(--green); color: var(--green); background: var(--card); text-decoration: none; cursor: pointer; }
+  .btn2.fill { background: var(--green); color: #fff; }
+  .foot { font-size: 12px; color: var(--muted); text-align: center; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <img src="data:image/png;base64,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" alt="MRML">
+    <span class="word">MRML</span>
+    <div class="langs" role="group" aria-label="Language">
+      <button type="button" data-lang="zh">中文</button><button type="button" data-lang="ja">日本語</button><button type="button" data-lang="en">EN</button>
+    </div>
+    <a class="back" href="index.html" data-i="back"></a>
+  </header>
+
+  <div>
+    <h1 data-i="title"></h1>
+    <p class="sub" data-i="intro"></p>
+  </div>
+
+  <p class="msg err" id="notready" hidden data-i="notready"></p>
+
+  <form id="form" class="card" novalidate>
+    <div class="row2">
+      <label class="f"><span data-i="date"></span><input type="date" id="date" required></label>
+      <label class="f"><span data-i="pin"></span><input type="password" id="pin" autocomplete="off" inputmode="text" required></label>
+    </div>
+    <div class="rule" id="rule"></div>
+
+    <div class="players" id="players"></div>
+    <button type="button" class="toggle" id="pentoggle" data-i="addpen"></button>
+
+    <div class="total" id="total"><span data-i="total"></span><span class="v" id="totalv">0</span></div>
+
+    <div class="preview" id="preview" hidden></div>
+
+    <label class="f"><span data-i="by"></span><select id="by"></select></label>
+
+    <p class="msg err" id="err" hidden></p>
+    <button type="submit" class="go" id="go" data-i="submit"></button>
+  </form>
+
+  <div class="card done" id="done" hidden>
+    <div class="big">✓</div>
+    <strong data-i="saved"></strong>
+    <p class="sub" data-i="savednote"></p>
+    <div class="preview" id="donepreview" style="align-self: stretch"></div>
+    <div class="btns">
+      <button type="button" class="btn2 fill" id="again" data-i="again"></button>
+      <a class="btn2" href="index.html" data-i="see"></a>
+    </div>
+  </div>
+
+  <p class="foot" data-i="foot"></p>
+</div>
+
+<script>
+(function () {
+  const ENDPOINT = '';
+  const SEASONS = [{"season_id": 3, "season_name": "Season 3 - WRC(aka)", "start": "2025-11-22", "end": "2026-05-09", "start_points": 30000, "uma_1": 30, "uma_2": 10, "uma_3": -10, "uma_4": -30, "min_games": 30, "finalists": 4}, {"season_id": 4, "season_name": "Season 4 - Saikouisen", "start": "2026-05-16", "end": "2026-10-31", "start_points": 30000, "uma_1": 30, "uma_2": 10, "uma_3": -10, "uma_4": -30, "min_games": 30, "finalists": 4}, {"season_id": 5, "season_name": "Season 5 - MLeague", "start": "2026-11-07", "end": "2027-05-01", "start_points": 25000, "uma_1": 45, "uma_2": 5, "uma_3": -15, "uma_4": -35, "min_games": 25, "finalists": 4}];
+  const NAMES = ["Angus", "TT", "Scrooge", "Will", "Haozhe", "Pludo", "Yuntong", "Dr Piano", "Eason", "狂", "Dustin", "Zoe", "僮", "George", "Willy", "小玖", "陆", "於", "小鱼干", "Terry", "丹夏", "Leo", "Rich", "轩", "HanZ", "Jackey", "Suda", "Harry", "王富贵", "瓶子", "白银辉夜", "Pineapple", "鱼宝", "Lumi", "Cris", "Renee", "Wang.C", "Eva", "Klem"];
+  const SHEET = '1vcRSRL1m5N8vQ11yca-mJo3MCVBbzCCBS4IUNi5240E';
+
+  const T = {
+    back: ['← 排名', '← 順位表', '← Standings'],
+    title: ['录入成绩', '成績入力', 'Enter a game'],
+    intro: ['每桌打完一局，由一个人录入四人的最终得点。', '1半荘終了後、卓の誰か1人が4人の最終持ち点を入力してください。', 'After each game, one player per table enters all four final scores.'],
+    notready: ['录分还没开通：管理员还没完成表格连接。', '入力はまだ準備中です（管理者の設定待ち）。', 'Score entry isn’t switched on yet — the organiser still needs to connect the sheet.'],
+    date: ['日期', '日付', 'Date'],
+    pin: ['联赛口令', 'リーグ合言葉', 'League code'],
+    player: ['选手', '選手', 'Player'],
+    score: ['最终得点', '最終持ち点', 'Final score'],
+    choose: ['选择选手', '選手を選択', 'Choose player'],
+    newp: ['＋ 新选手…', '＋ 新しい選手…', '+ New player…'],
+    newname: ['新选手名字', '新しい選手名', 'New player name'],
+    addpen: ['＋ 有罚分', '＋ ペナルティあり', '+ Add penalties'],
+    hidepen: ['− 收起罚分', '− ペナルティを閉じる', '− Hide penalties'],
+    pen: ['罚分 pt', 'ペナルティ pt', 'Penalty pt'],
+    total: ['四人合计', '4人合計', 'Total of four'],
+    by: ['谁在录入', '入力者', 'Entered by'],
+    submit: ['提交这一局', 'この対局を送信', 'Submit this game'],
+    sending: ['提交中…', '送信中…', 'Sending…'],
+    saved: ['已记录！', '記録しました！', 'Saved!'],
+    savednote: ['刷新排名页就能看到。', '順位表を再読み込みすると反映されます。', 'Reload the standings to see it.'],
+    again: ['再录一局', 'もう1局入力', 'Enter another'],
+    see: ['看排名', '順位表へ', 'See standings'],
+    foot: ['录错了？告诉联赛管理员在表格里修改。', '間違えた場合は管理者に修正を依頼してください。', 'Made a mistake? Ask the organiser to fix it in the sheet.'],
+    rule: ['{s}：起始 {sp} 点，四人合计应为 {tot}。', '{s}：配給 {sp} 点、4人合計は {tot}。', '{s}: start {sp}, the four scores must add up to {tot}.'],
+    noseason: ['这个日期不在任何赛季内。', 'この日付はどのシーズンにも含まれません。', 'That date isn’t in any season.'],
+    diffover: ['多了 {d}', '{d} 多い', '{d} too many'],
+    diffunder: ['少了 {d}', '{d} 足りない', '{d} short'],
+    e_missing: ['请为四个位置都选好选手。', '4人全員の選手を選んでください。', 'Choose a player for all four seats.'],
+    e_dup: ['同一个选手出现了两次。', '同じ選手が2回選ばれています。', 'The same player is chosen twice.'],
+    e_score: ['得点要填整百的数字，例如 32,400。', '持ち点は100点単位で入力してください（例：32400）。', 'Scores must be in hundreds, e.g. 32400.'],
+    e_total: ['四人合计不对，请检查分数。', '4人合計が合いません。', 'The four scores don’t add up.'],
+    e_pin: ['联赛口令不对。', '合言葉が違います。', 'Wrong league code.'],
+    e_net: ['没连上，请检查网络后再试。', '接続できませんでした。もう一度お試しください。', 'Couldn’t reach the sheet. Check your connection and try again.'],
+    e_other: ['提交失败：{c}', '送信に失敗しました：{c}', 'Couldn’t save: {c}'],
+    place: ['位', '位', ''],
+  };
+  let lang = 'zh';
+  try { const saved = localStorage.getItem('mrml-lang'); if (saved) lang = saved; else if ((navigator.language || '').startsWith('ja')) lang = 'ja'; } catch (e) {}
+  if (!['zh', 'ja', 'en'].includes(lang)) lang = 'zh';
+  const li = () => ({ zh: 0, ja: 1, en: 2 })[lang];
+  const tr = (k, vars) => { let s = (T[k] || [k, k, k])[li()]; if (vars) for (const [a, b] of Object.entries(vars)) s = s.replace('{' + a + '}', b); return s; };
+  const fmt = (n) => Number(n).toLocaleString('en-US');
+
+  const $ = (id) => document.getElementById(id);
+  const form = $('form'), playersEl = $('players');
+  let showPen = false;
+  let names = NAMES.slice();
+
+  // ---- build the four seats ----
+  const seats = [];
+  for (let k = 0; k < 4; k++) {
+    const wrap = document.createElement('div'); wrap.className = 'p';
+    const n = document.createElement('span'); n.className = 'n'; n.textContent = String(k + 1);
+    const sel = document.createElement('select'); sel.className = 'name';
+    const score = document.createElement('input'); score.className = 'score'; score.type = 'text'; score.inputMode = 'numeric'; score.autocomplete = 'off';
+    const nw = document.createElement('input'); nw.className = 'new'; nw.type = 'text'; nw.hidden = true; nw.maxLength = 40;
+    const pen = document.createElement('label'); pen.className = 'pen'; pen.hidden = true;
+    const penLab = document.createElement('span');
+    const penIn = document.createElement('input'); penIn.type = 'text'; penIn.inputMode = 'decimal'; penIn.placeholder = '0';
+    pen.append(penLab, penIn);
+    wrap.append(n, sel, score, nw, pen);
+    playersEl.appendChild(wrap);
+    seats.push({ sel, score, nw, pen, penLab, penIn });
+    sel.addEventListener('change', () => { nw.hidden = sel.value !== '__new'; if (!nw.hidden) nw.focus(); update(); });
+    [score, nw, penIn].forEach((el) => el.addEventListener('input', update));
+  }
+
+  const fillNames = () => {
+    for (const s of seats) {
+      const cur = s.sel.value;
+      s.sel.replaceChildren();
+      const o0 = new Option(tr('choose'), ''); o0.disabled = true; s.sel.add(o0);
+      names.forEach((nm) => s.sel.add(new Option(nm, nm)));
+      s.sel.add(new Option(tr('newp'), '__new'));
+      s.sel.value = cur && [...s.sel.options].some((o) => o.value === cur) ? cur : '';
+    }
+  };
+
+  const seasonFor = (iso) => SEASONS.find((s) => s.start <= iso && iso <= s.end) || null;
+  const parseScore = (v) => { const s = String(v || '').replace(/[,\s，]/g, ''); if (s === '') return null; return /^-?\d+$/.test(s) ? Number(s) : NaN; };
+  const parsePen = (v) => { const s = String(v || '').replace(/[\s，]/g, '').replace('−', '-'); if (s === '') return 0; return /^-?\d+(\.\d+)?$/.test(s) ? Number(s) : NaN; };
+
+  const read = () => seats.map((s) => ({
+    name: s.sel.value === '__new' ? s.nw.value.trim() : s.sel.value,
+    score: parseScore(s.score.value),
+    penalty: parsePen(s.penIn.value)
+  }));
+
+  // Places with ties sharing the bonus, as the dashboard does.
+  const pointsFor = (ps, season) => {
+    const uma = [season.uma_1, season.uma_2, season.uma_3, season.uma_4].map(Number);
+    const order = ps.map((p, i) => ({ ...p, i })).sort((a, b) => b.score - a.score);
+    let pos = 0;
+    while (pos < 4) {
+      let j = pos; while (j + 1 < 4 && order[j + 1].score === order[pos].score) j++;
+      const share = uma.slice(pos, j + 1).reduce((a, b) => a + b, 0) / (j - pos + 1);
+      for (let q = pos; q <= j; q++) { order[q].place = (pos + j) / 2 + 1; order[q].pts = Math.round(((order[q].score - season.start_points) / 1000 + share + order[q].penalty) * 10) / 10; }
+      pos = j + 1;
+    }
+    return order;
+  };
+
+  const drawPreview = (el, rows) => {
+    el.replaceChildren();
+    rows.forEach((r) => {
+      const d = document.createElement('div'); d.className = 'pr';
+      const b = document.createElement('span'); b.className = 'badge';
+      const c = ['--r1', '--r2', '--r3', '--r4'][Math.min(3, Math.round(r.place) - 1)];
+      b.style.borderColor = `var(${c})`; b.style.color = `var(${c})`;
+      b.textContent = Number.isInteger(r.place) ? String(r.place) : r.place.toFixed(1);
+      const nm = document.createElement('span'); nm.textContent = `${r.name}  ·  ${fmt(r.score)}`;
+      const p = document.createElement('span'); p.className = 'pts ' + (r.pts < 0 ? 'neg' : 'pos');
+      p.textContent = (r.pts < 0 ? '' : '+') + Math.abs(r.pts).toFixed(1) + 'pt';
+      d.append(b, nm, p); el.appendChild(d);
+    });
+  };
+
+  let lastProblem = null;
+  let sending = false;
+  function update() {
+    const iso = $('date').value;
+    const season = seasonFor(iso);
+    $('rule').textContent = season ? tr('rule', { s: season.season_name.replace(/\s*-.*/, ''), sp: fmt(season.start_points), tot: fmt(season.start_points * 4) }) : tr('noseason');
+    const ps = read();
+    const total = ps.reduce((t, p) => t + (Number.isFinite(p.score) ? p.score : 0), 0);
+    const tv = $('totalv'), tb = $('total');
+    tb.classList.remove('ok', 'bad');
+    let problem = null;
+    if (!season) problem = 'noseason';
+    else if (ps.some((p) => !p.name)) problem = 'e_missing';
+    else if (new Set(ps.map((p) => p.name.toLowerCase())).size < 4) problem = 'e_dup';
+    else if (ps.some((p) => p.score === null || !Number.isFinite(p.score) || p.score % 100 !== 0 || !Number.isFinite(p.penalty))) problem = 'e_score';
+    else if (total !== season.start_points * 4) problem = 'e_total';
+    const anyScore = ps.some((p) => p.score !== null);
+    if (season && anyScore) {
+      const diff = total - season.start_points * 4;
+      tv.textContent = fmt(total) + (diff === 0 ? ' ✓' : '  (' + tr(diff > 0 ? 'diffover' : 'diffunder', { d: fmt(Math.abs(diff)) }) + ')');
+      tb.classList.add(diff === 0 ? 'ok' : 'bad');
+    } else tv.textContent = season ? '0 / ' + fmt(season.start_points * 4) : '—';
+    const pv = $('preview');
+    if (!problem) { pv.hidden = false; drawPreview(pv, pointsFor(ps, season)); } else pv.hidden = true;
+    // "Entered by" lists the chosen players.
+    const by = $('by'), cur = by.value;
+    const chosen = ps.map((p) => p.name).filter(Boolean);
+    by.replaceChildren(...chosen.map((n) => new Option(n, n)));
+    let remembered = ''; try { remembered = localStorage.getItem('mrml-me') || ''; } catch (e) {}
+    by.value = chosen.includes(cur) ? cur : (chosen.includes(remembered) ? remembered : (chosen[0] || ''));
+    $('go').disabled = !!problem || !ENDPOINT || !$('pin').value.trim() || sending;
+    lastProblem = problem;
+    $('err').hidden = true;
+  }
+
+  function applyLang() {
+    document.documentElement.lang = lang;
+    document.querySelectorAll('[data-i]').forEach((el) => { el.textContent = tr(el.dataset.i); });
+    document.querySelectorAll('.langs button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.lang === lang)));
+    $('pentoggle').textContent = tr(showPen ? 'hidepen' : 'addpen');
+    seats.forEach((s, k) => {
+      s.score.placeholder = tr('score'); s.nw.placeholder = tr('newname'); s.penLab.textContent = tr('pen');
+      s.sel.setAttribute('aria-label', tr('player') + ' ' + (k + 1)); s.score.setAttribute('aria-label', tr('score') + ' ' + (k + 1));
+    });
+    fillNames(); update();
+  }
+  document.querySelectorAll('.langs button').forEach((b) => b.addEventListener('click', () => { lang = b.dataset.lang; try { localStorage.setItem('mrml-lang', lang); } catch (e) {} applyLang(); }));
+  $('pentoggle').addEventListener('click', () => { showPen = !showPen; seats.forEach((s) => { s.pen.hidden = !showPen; if (!showPen) s.penIn.value = ''; }); applyLang(); });
+  $('date').addEventListener('input', update);
+  $('pin').addEventListener('input', update);
+
+  // Today in the viewer's time zone.
+  const now = new Date();
+  $('date').value = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+  try { $('pin').value = localStorage.getItem('mrml-pin') || ''; } catch (e) {}
+  if (!ENDPOINT) $('notready').hidden = false;
+
+  const newId = () => Date.now().toString(36) + Math.random().toString(36).slice(2, 10);
+  let subId = newId();
+
+  form.addEventListener('submit', async (ev) => {
+    ev.preventDefault();
+    update();
+    const err = $('err');
+    if (lastProblem) { err.textContent = tr(lastProblem); err.hidden = false; return; }
+    if (!ENDPOINT || sending) return;
+    const ps = read();
+    const season = seasonFor($('date').value);
+    const payload = { id: subId, pin: $('pin').value.trim(), date: $('date').value, by: $('by').value, players: ps };
+    sending = true; $('go').disabled = true; $('go').textContent = tr('sending');
+    let failed = '';
+    try {
+      const r = await fetch(ENDPOINT, { method: 'POST', body: JSON.stringify(payload) });
+      const res = await r.json();
+      if (res.ok) {
+        try { localStorage.setItem('mrml-pin', payload.pin); if (payload.by) localStorage.setItem('mrml-me', payload.by); } catch (e) {}
+        drawPreview($('donepreview'), pointsFor(ps, season));
+        form.hidden = true; $('done').hidden = false; window.scrollTo(0, 0);
+      } else {
+        const map = { bad_pin: 'e_pin', bad_total: 'e_total', duplicate_name: 'e_dup', missing_name: 'e_missing', bad_score: 'e_score', no_season: 'noseason' };
+        failed = map[res.code] ? tr(map[res.code]) : tr('e_other', { c: res.code || '?' });
+      }
+    } catch (e) {
+      failed = tr('e_net');
+    } finally {
+      sending = false; $('go').textContent = tr('submit'); update();
+      if (failed) { err.textContent = failed; err.hidden = false; }
+    }
+  });
+
+  $('again').addEventListener('click', () => {
+    seats.forEach((s) => { s.score.value = ''; s.penIn.value = ''; });
+    subId = newId();
+    $('done').hidden = true; form.hidden = false; update();
+    seats[0].score.focus();
+  });
+
+  applyLang();
+
+  // Pick up players added to the sheet since this page was built.
+  fetch('https://docs.google.com/spreadsheets/d/' + SHEET + '/gviz/tq?tqx=out:csv&headers=1&sheet=All_Games', { cache: 'no-store' })
+    .then((r) => (r.ok ? r.text() : ''))
+    .then((text) => {
+      if (!text) return;
+      const seen = new Set(names);
+      const extra = [];
+      text.split(/\r?\n/).slice(1).forEach((line) => {
+        const cells = line.match(/"([^"]*)"/g) || [];
+        [1, 4, 7, 10].forEach((i) => { const v = (cells[i] || '').replace(/"/g, '').trim(); if (v && !/^[\d,.\-]+$/.test(v) && !seen.has(v)) { seen.add(v); extra.push(v); } });
+      });
+      if (extra.length) { names = names.concat(extra.sort()); fillNames(); update(); }
+    })
+    .catch(() => {});
+})();
+</script>
+</body>
+</html>
