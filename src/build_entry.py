@@ -2,7 +2,8 @@
 Usage: python3 src/build_entry.py [ENDPOINT_URL]"""
 import json, sys, re, collections
 ROOT = '/home/claude/mrml'
-endpoint = sys.argv[1] if len(sys.argv) > 1 else ''
+DEFAULT_ENDPOINT = 'https://script.google.com/macros/s/AKfycbyiVM-gNfKxTksri9zIE-fk1dIp0H54gi7VhrA2zp1VFEoUb8zs3txNgi8h9MKAkTbp/exec'
+endpoint = sys.argv[1] if len(sys.argv) > 1 else DEFAULT_ENDPOINT
 seasons = json.load(open('/home/claude/mrml_seasons.json'))
 games = json.load(open('/home/claude/mrml_games_snapshot.json'))
 games = games['rows'] if isinstance(games, dict) else games
