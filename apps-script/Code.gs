@@ -1,19 +1,13 @@
 /**
  * MRML 录分 — receives one finished game from the website and adds it to All_Games.
- *
- * Setup (once):
- *   1. In the MRML sheet: Extensions → Apps Script. Replace everything with this file.
- *   2. Change LEAGUE_PIN below to the code you give the players.
- *   3. Deploy → New deployment → type "Web app".
- *      Execute as: Me.   Who has access: Anyone.   → Deploy, allow access.
- *   4. Copy the Web app URL (ends with /exec) and send it to Claude.
- * After editing this code later: Deploy → Manage deployments → ✏️ → Version: New version → Deploy
- * (the URL stays the same).
+ * Deployed as a Web app (Execute as: Me, Who has access: Anyone).
+ * After editing: Deploy → Manage deployments → ✏️ → Version: New version → Deploy (URL stays the same).
  */
 
 const LEAGUE_PIN = '改成你的口令';      // ← change me
 const GAMES_TAB = 'All_Games';
 const SEASONS_TAB = 'Dim_Seasons';
+const SHEET_ID = '1vcRSRL1m5N8vQ11yca-mJo3MCVBbzCCBS4IUNi5240E';
 
 function doGet() {
   return json_({ ok: true, service: 'MRML score entry' });
@@ -44,9 +38,8 @@ function doPost(e) {
   if (players.some((p) => !Number.isFinite(p.score) || p.score % 100 !== 0)) return json_({ ok: false, code: 'bad_score' });
   if (players.some((p) => !Number.isFinite(p.penalty))) return json_({ ok: false, code: 'bad_penalty' });
 
-  const ss = SpreadsheetApp.getActiveSpreadsheet();
+  const ss = SpreadsheetApp.openById(SHEET_ID);
 
-  // Season rules: the four scores must add up to 4 × starting points.
   const season = findSeason_(ss, iso);
   if (!season) return json_({ ok: false, code: 'no_season' });
   // Scores that don't balance (foul, sticks left…) are accepted; the dashboard lists them under score checks.
