@@ -49,10 +49,8 @@ function doPost(e) {
   // Season rules: the four scores must add up to 4 × starting points.
   const season = findSeason_(ss, iso);
   if (!season) return json_({ ok: false, code: 'no_season' });
-  // A game whose scores don't balance (foul, chombo…) is accepted only with a note explaining why.
+  // Scores that don't balance (foul, sticks left…) are accepted; the dashboard lists them under score checks.
   const note = String(body.note || '').trim().slice(0, 300);
-  const total = players.reduce((t, p) => t + p.score, 0);
-  if (total !== season.startPoints * 4 && !note) return json_({ ok: false, code: 'bad_total', total: total, expected: season.startPoints * 4 });
 
   const lock = LockService.getScriptLock();
   lock.waitLock(20000);

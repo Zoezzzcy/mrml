@@ -78,7 +78,7 @@
   textarea { font: 500 15px var(--font); color: var(--fg); background: var(--field); border: 1px solid var(--line); border-radius: 10px; padding: 10px 11px; width: 100%; min-height: 64px; resize: vertical; }
   textarea:focus { outline: 2px solid var(--green); border-color: transparent; }
   .need textarea { border-color: var(--red); background: var(--red-soft); }
-  .hint { font-size: 12px; font-weight: 600; color: var(--red); }
+  .hint { font-size: 12px; font-weight: 600; color: var(--muted); }
   .go { font: 800 17px var(--font); color: #fff; background: var(--red); border: 0; border-radius: 12px; padding: 14px; cursor: pointer; }
   .go:disabled { background: var(--grey); cursor: not-allowed; opacity: .7; }
   .msg { font-size: 14px; font-weight: 600; padding: 10px 12px; border-radius: 10px; }
@@ -171,7 +171,7 @@
     total: ['四人合计', '4人合計', 'Total of four'],
     by: ['谁在录入', '入力者', 'Entered by'],
     note: ['备注（可选：犯规、错和、供托等）', '備考（任意：チョンボ・供託など）', 'Note (optional: foul, chombo, sticks left…)'],
-    notehint: ['分数合计不平：请在备注里写明原因（例如：犯规、供托立直棒）才能提交。', '合計が合いません。理由を備考に書くと送信できます。', 'The scores don’t balance — explain why in the note to submit.'],
+    notehint: ['合计不平也可以提交；方便的话在备注写一下原因（例如：犯规、供托立直棒）。', '合計が合わなくても送信できます。可能なら備考に理由を。', 'You can still submit — if you can, add the reason in the note.'],
     unbal: ['合计不平，已附备注', '合計不一致（備考あり）', 'Unbalanced, note added'],
     submit: ['提交这一局', 'この対局を送信', 'Submit this game'],
     sending: ['提交中…', '送信中…', 'Sending…'],
@@ -291,8 +291,6 @@
     else if (ps.some((p) => p.score === null || !Number.isFinite(p.score) || p.score % 100 !== 0 || !Number.isFinite(p.penalty))) problem = 'e_score';
     const note = $('note').value.trim();
     const unbalanced = !!season && total !== season.start_points * 4;
-    if (!problem && unbalanced && !note) problem = 'e_total';
-    $('notebox').classList.toggle('need', !problem || problem === 'e_total' ? (unbalanced && !note) : false);
     $('notehint').hidden = !(unbalanced && !note && ps.every((p) => p.name && Number.isFinite(p.score)));
     const anyScore = ps.some((p) => p.score !== null);
     if (season && anyScore) {
