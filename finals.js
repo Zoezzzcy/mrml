@@ -72,7 +72,7 @@
       const c = el('section', 'mr-card');
       c.append(el('h2', null, t('决赛', '決勝', 'Final') + ' · ' + sname));
       c.append(el('p', 'mr-empty', !fin
-        ? t('这个赛季还没有设置决赛。在表格 Dim_Seasons 的 final_rule_id 填上规则编号后就会显示在这里。', 'このシーズンの決勝はまだ設定されていません。Dim_Seasons の final_rule_id にルールIDを入れると表示されます。', 'No final is set up for this season yet. Fill in final_rule_id in the Dim_Seasons tab and it will show here.')
+        ? t('这个赛季还没有设置决赛。', 'このシーズンの決勝はまだ設定されていません。', 'No final is set up for this season yet.')
         : t('找不到规则「' + fin.cfg.finalRule + '」：请在 Dim_Rules 里添加。', 'ルール「' + fin.cfg.finalRule + '」が Dim_Rules にありません。', 'Rule “' + fin.cfg.finalRule + '” isn’t in the Dim_Rules tab.')));
       box.append(c); return;
     }
