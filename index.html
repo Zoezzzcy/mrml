@@ -740,7 +740,7 @@
         <li><span class="t-zh" lang="zh">同分的选手平分所并列名次的马点，名次次数也各算一半。</span><span class="t-ja" lang="ja">同点の選手は該当順位のウマを均等に分け、順位回数も按分。</span><span class="t-en" lang="en">Players tied on score share the placements they tie for: their bonuses are averaged and the placement counts are split.</span></li>
         <li><span class="t-zh" lang="zh">表格里的罚分按原数直接加到当场积分。</span><span class="t-ja" lang="ja">シートのペナルティはそのままその対局のptに加算。</span><span class="t-en" lang="en">Penalties from the sheet are added to that game’s points as written.</span></li>
         <li><span class="t-zh" lang="zh">只有满赛季最低场次（第 3–4 季 30 场，第 5 季 25 场）的选手参加排名，排名前 4 的选手进入决赛。「落后上一名」只在排名选手之间比较。</span><span class="t-ja" lang="ja">シーズンの最低対局数（シーズン3–4は30戦、シーズン5は25戦）以上の選手のみ順位対象で、上位4名が決勝進出。「上位との差」は順位対象の選手間のみ。</span><span class="t-en" lang="en">Only players with at least the season's minimum games (30 in Seasons 3–4, 25 in Season 5) are ranked, and the top 4 ranked players make the final. Behind next compares ranked players only.</span></li>
-        <li><span class="t-zh" lang="zh">剩余周数：从今天到赛季结束日（含当天），还有几个比赛日——按每周一次、在赛季开幕那天的星期几计算。</span><span class="t-ja" lang="ja">残り週数：今日からシーズン最終日（当日を含む）までに残っている対局日の数（毎週、開幕と同じ曜日で計算）。</span><span class="t-en" lang="en">Weeks left counts the game nights still to play, from today to the season's end date (inclusive), one a week on the weekday the season started.</span></li>
+        <li><span class="t-zh" lang="zh">剩余周数：赛季还没打的周数。每周从开幕那天的星期几算起（第 5 赛季是星期六到下星期五）；同一周里不管哪天打、打几次，都只算这一周。本周还没开打时，本周也算在内。</span><span class="t-ja" lang="ja">残り週数：まだ対局していない週の数。週は開幕と同じ曜日から始まり（シーズン5は土曜〜金曜）、同じ週内の対局は何日・何回でも1週として数えます。</span><span class="t-en" lang="en">Weeks left counts league weeks not yet played. A week starts on the season's opening weekday (Season 5: Saturday to Friday); any games inside a week, on any day, count as that one week.</span></li>
         <li><span class="t-zh" lang="zh">对局数据实时读取 MRML 表格的 All_Games 页；赛季规则是 Dim_Seasons 页的存档副本，加上联赛的最低场次和前 4 名晋级规则。</span><span class="t-ja" lang="ja">対局データはMRMLシートのAll_Gamesタブからリアルタイムで読み込み、シーズンルールはDim_Seasonsタブの保存コピーに最低対局数の条件と上位4名の決勝ルールを加えたもの。</span><span class="t-en" lang="en">Games are read live from the All_Games tab of the MRML sheet; the season rules are a saved copy of the Dim_Seasons tab plus the league’s minimum games and top-4 final.</span></li>
       </ul>
     </details>
@@ -1220,16 +1220,19 @@
         lead_margin: ranked[1] ? Math.round((ranked[0].points - ranked[1].points) * 10) / 10 : null,
         points_leader: byPoints[0] ? byPoints[0].player : null,
         points_leader_points: byPoints[0] ? byPoints[0].points : null,
-        // Game nights still to play: one per week on the weekday the season started (e.g. Saturday),
-        // counted from today (or the day after the last game, if that is later) up to and including the end date.
+        // League weeks still to play. Weeks run from the season's opening weekday (e.g. Saturday → Friday);
+        // any game inside a week — the usual night or an extra one on another day — counts for that week.
+        // The current week still counts until a game has been played in it.
         weeks_left: (() => {
-          const dow = new Date(s.start + 'T00:00:00Z').getUTCDay();
+          const DAY = 86400000, WEEK = 7 * DAY;
+          const start = Date.parse(s.start + 'T00:00:00Z'), end = Date.parse(s.end + 'T00:00:00Z');
           const now = new Date();
           const today = Date.UTC(now.getFullYear(), now.getMonth(), now.getDate());
-          let d = Math.max(today, Date.parse(latest + 'T00:00:00Z') + 86400000);
-          const end = Date.parse(s.end + 'T00:00:00Z');
-          d += ((dow - new Date(d).getUTCDay() + 7) % 7) * 86400000;
-          return d > end ? 0 : Math.floor((end - d) / (7 * 86400000)) + 1;
+          const idx = (t) => Math.floor((t - start) / WEEK);
+          const lastWeek = idx(end);
+          const playedWeek = dates.length ? idx(Date.parse(latest + 'T00:00:00Z')) : -1;
+          const from = Math.max(idx(today), playedWeek + 1, 0);
+          return Math.max(0, lastWeek - from + 1);
         })(),
         start_points: Number(s.start_points), uma_1: Number(s.uma_1), uma_2: Number(s.uma_2), uma_3: Number(s.uma_3), uma_4: Number(s.uma_4),
         progress: Math.round(Math.max(0, Math.min(1, (Date.parse(latest) - Date.parse(s.start)) / (Date.parse(s.end) - Date.parse(s.start)))) * 1000) / 10,
