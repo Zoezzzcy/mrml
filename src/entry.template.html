@@ -92,6 +92,10 @@
   .btn2 { font: 700 15px var(--font); border-radius: 10px; padding: 10px 16px; border: 1px solid var(--green); color: var(--green); background: var(--card); text-decoration: none; cursor: pointer; }
   .btn2.fill { background: var(--green); color: #fff; }
   .foot { font-size: 12px; color: var(--muted); text-align: center; }
+  .stage { display: grid; grid-template-columns: 1fr 1fr; gap: 4px; padding: 4px; border-radius: 12px; background: var(--bg); }
+  .stage button { border: 0; background: none; color: var(--muted); font: 700 15px var(--font); padding: 9px; border-radius: 9px; cursor: pointer; }
+  .stage button[aria-pressed="true"] { background: var(--card); color: var(--green); box-shadow: 0 1px 3px rgba(0,0,0,.12); }
+  .stage button.fin[aria-pressed="true"] { color: var(--red); }
 </style>
 </head>
 <body>
@@ -113,6 +117,8 @@
   <p class="msg err" id="notready" hidden data-i="notready"></p>
 
   <form id="form" class="card" novalidate>
+    <div class="stage" role="group" id="stage"><button type="button" data-stage="league" data-i="st_league"></button><button type="button" class="fin" data-stage="final" data-i="st_final"></button></div>
+    <label class="f" id="finbox" hidden><span data-i="finseason"></span><select id="finseason"></select></label>
     <label class="f"><span data-i="date"></span><input type="date" id="date" required></label>
     <div class="rule" id="rule"></div>
 
@@ -145,6 +151,7 @@
   <p class="foot" data-i="foot"></p>
 </div>
 
+<script src="rules.js"></script>
 <script>
 (function () {
   const ENDPOINT = '__ENDPOINT__';
@@ -192,6 +199,13 @@
     e_net: ['没连上，请检查网络后再试。', '接続できませんでした。もう一度お試しください。', 'Couldn’t reach the sheet. Check your connection and try again.'],
     e_other: ['提交失败：{c}', '送信に失敗しました：{c}', 'Couldn’t save: {c}'],
     place: ['位', '位', ''],
+    st_league: ['常规赛', 'リーグ戦', 'League game'],
+    st_final: ['决赛', '決勝', 'Final'],
+    finseason: ['哪个赛季的决赛', 'どのシーズンの決勝', 'Final of season'],
+    finrule: ['{s} 决赛 · {r}：起始 {sp} 点，四人合计应为 {tot}。第 {g} 场（共 {n} 场）。', '{s} 決勝・{r}：配給 {sp} 点、4人合計は {tot}。第{g}戦（全{n}戦）。', '{s} final · {r}: start {sp}, the four scores must add up to {tot}. Game {g} of {n}.'],
+    nofinal: ['现在没有设置好的决赛。', '設定済みの決勝がありません。', 'No final is set up yet.'],
+    finalsoff: ['录分服务还没更新，暂时不能录决赛（管理员需要重新部署 Apps Script）。', '入力サービスが未更新のため、決勝はまだ入力できません（管理者がApps Scriptを再デプロイする必要があります）。', 'Final games can’t be saved until the organiser redeploys the Apps Script.'],
+    savedfinal: ['决赛这一局已记录！刷新决赛页就能看到。', '決勝の対局を記録しました！決勝ページを再読み込みしてください。', 'Final game saved! Reload the Final page to see it.'],
   };
   let lang = 'zh';
   try { const saved = localStorage.getItem('mrml-lang'); if (saved) lang = saved; else if ((navigator.language || '').startsWith('ja')) lang = 'ja'; } catch (e) {}
@@ -230,13 +244,37 @@
       const cur = s.sel.value;
       s.sel.replaceChildren();
       const o0 = new Option(tr('choose'), ''); o0.disabled = true; s.sel.add(o0);
-      names.forEach((nm) => s.sel.add(new Option(nm, nm)));
-      s.sel.add(new Option(tr('newp'), '__new'));
+      const fin = finalNow();
+      const list = fin && fin.cfg.finalists && fin.cfg.finalists.length ? fin.cfg.finalists : names;
+      list.forEach((nm) => s.sel.add(new Option(nm, nm)));
+      if (!fin) s.sel.add(new Option(tr('newp'), '__new'));
       s.sel.value = cur && [...s.sel.options].some((o) => o.value === cur) ? cur : '';
     }
   };
 
   const seasonFor = (iso) => SEASONS.find((s) => s.start <= iso && iso <= s.end) || null;
+  // ---- final stage: rules come from Dim_Rules / Dim_Seasons through rules.js ----
+  let stage = 'league';
+  let FIN = null;
+  const MR = window.MRMLRules;
+  const setFin = (d) => {
+    FIN = d;
+    const opts = Object.values(d.seasons).filter((c) => c.finalRule && d.rules[c.finalRule]).sort((a, b) => b.season - a.season);
+    const sel = $('finseason'), cur = sel.value;
+    sel.replaceChildren(...opts.map((c) => { const s = SEASONS.find((x) => Number(x.season_id) === c.season); return new Option((s ? s.season_name.replace(/\s*-.*/, '') : 'Season ' + c.season) + ' · ' + d.rules[c.finalRule].name, String(c.season)); }));
+    if (cur && opts.some((c) => String(c.season) === cur)) sel.value = cur;
+    if (stage === 'final') { fillNames(); update(); }
+  };
+  if (MR) { setFin({ rules: MR.buildRules(MR.SAVED.rules), seasons: MR.seasonConfig(MR.SAVED.seasons), games: MR.gameRows(MR.SAVED.games) }); MR.loadFinals().then(setFin).catch(() => {}); }
+  let finalsReady = false;
+  if (ENDPOINT) fetch(ENDPOINT).then((r) => r.json()).then((j) => { finalsReady = !!(j && j.finals); update(); }).catch(() => {});
+  const finalNow = () => {
+    if (stage !== 'final' || !FIN) return null;
+    const id = Number($('finseason').value); const cfg = FIN.seasons[id];
+    if (!cfg || !FIN.rules[cfg.finalRule]) return null;
+    const s = SEASONS.find((x) => Number(x.season_id) === id);
+    return { id, cfg, rule: FIN.rules[cfg.finalRule], name: s ? s.season_name.replace(/\s*-.*/, '') : 'Season ' + id, played: FIN.games.filter((g) => g.season === id).length };
+  };
   const parseScore = (v) => { const s = String(v || '').replace(/[,\s，]/g, ''); if (s === '') return null; return /^-?\d+$/.test(s) ? Number(s) : NaN; };
   // Phone number pads have no minus key, so a penalty is typed as a plain number and always deducted (20 → −20).
   const parsePen = (v) => { const s = String(v || '').replace(/[\s，]/g, '').replace('−', '-').replace('－', '-'); if (s === '') return 0; return /^-?\d+(\.\d+)?$/.test(s) ? -Math.abs(Number(s)) : NaN; };
@@ -252,6 +290,7 @@
 
   // Places with ties sharing the bonus, as the dashboard does.
   const pointsFor = (ps, season) => {
+    if (season && season.rule) return MR.scoreGame(ps, season.rule).map((r) => ({ ...r, pts: r.points })).sort((a, b) => a.place - b.place || b.score - a.score);
     const uma = [season.uma_1, season.uma_2, season.uma_3, season.uma_4].map(Number);
     const order = ps.map((p, i) => ({ ...p, i })).sort((a, b) => b.score - a.score);
     let pos = 0;
@@ -283,14 +322,20 @@
   let sending = false;
   function update() {
     const iso = $('date').value;
-    const season = seasonFor(iso);
-    $('rule').textContent = season ? tr('rule', { s: season.season_name.replace(/\s*-.*/, ''), sp: fmt(season.start_points), tot: fmt(season.start_points * 4) }) : tr('noseason');
+    const fin = finalNow();
+    $('finbox').hidden = stage !== 'final';
+    document.querySelectorAll('#stage button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.stage === stage)));
+    const season = stage === 'final' ? (fin ? { rule: fin.rule, start_points: fin.rule.start } : null) : seasonFor(iso);
+    $('rule').textContent = stage === 'final'
+      ? (fin ? tr('finrule', { s: fin.name, r: fin.rule.name, sp: fmt(fin.rule.start), tot: fmt(fin.rule.start * 4), g: fin.played + 1, n: fin.cfg.finalGames || '?' }) : tr('nofinal'))
+      : (season ? tr('rule', { s: season.season_name.replace(/\s*-.*/, ''), sp: fmt(season.start_points), tot: fmt(season.start_points * 4) }) : tr('noseason'));
     const ps = read();
     const total = ps.reduce((t, p) => t + (Number.isFinite(p.score) ? p.score : 0), 0);
     const tv = $('totalv'), tb = $('total');
     tb.classList.remove('ok', 'bad');
     let problem = null;
-    if (!season) problem = 'noseason';
+    if (!season) problem = stage === 'final' ? 'nofinal' : 'noseason';
+    else if (stage === 'final' && !finalsReady) problem = 'finalsoff';
     else if (ps.some((p) => !p.name)) problem = 'e_missing';
     else if (new Set(ps.map((p) => p.name.toLowerCase())).size < 4) problem = 'e_dup';
     else if (takenNew()) problem = 'e_taken';
@@ -314,6 +359,7 @@
     by.value = chosen.includes(cur) ? cur : (chosen.includes(remembered) ? remembered : (chosen[0] || ''));
     $('go').disabled = !!problem || !ENDPOINT || sending;
     lastProblem = problem;
+    if (problem === 'finalsoff') { $('err').textContent = tr('finalsoff'); }
     // Say right away when a new name is already taken (the button is greyed out, so it can't wait for submit).
     // Warn right under the name box (on a phone the bottom of the form is off screen), and at the bottom too.
     seats.forEach((s) => {
@@ -323,7 +369,8 @@
       s.taken.hidden = !hit;
       if (hit) s.taken.textContent = tr('e_taken', { n: hit });
     });
-    if (problem === 'e_taken') { $('err').textContent = tr('e_taken', { n: takenNew() }); $('err').hidden = false; }
+    if (problem === 'finalsoff') $('err').hidden = false;
+    else if (problem === 'e_taken') { $('err').textContent = tr('e_taken', { n: takenNew() }); $('err').hidden = false; }
     else $('err').hidden = true;
   }
 
@@ -341,6 +388,9 @@
   document.querySelectorAll('.langs button').forEach((b) => b.addEventListener('click', () => { lang = b.dataset.lang; try { localStorage.setItem('mrml-lang', lang); } catch (e) {} applyLang(); }));
   $('pentoggle').addEventListener('click', () => { showPen = !showPen; seats.forEach((s) => { s.pen.hidden = !showPen; if (!showPen) s.penIn.value = ''; }); applyLang(); });
   $('date').addEventListener('input', update);
+  document.querySelectorAll('#stage button').forEach((b) => b.addEventListener('click', () => { stage = b.dataset.stage; seats.forEach((s) => { s.sel.value = ''; s.nw.hidden = true; }); fillNames(); update(); }));
+  $('finseason').addEventListener('change', () => { fillNames(); update(); });
+  if (/final/.test(location.hash)) stage = 'final';
   $('note').addEventListener('input', update);
 
   // Today in the viewer's time zone.
@@ -358,8 +408,10 @@
     if (lastProblem) { err.textContent = tr(lastProblem, { n: takenNew() || '' }); err.hidden = false; return; }
     if (!ENDPOINT || sending) return;
     const ps = read();
-    const season = seasonFor($('date').value);
+    const fin = finalNow();
+    const season = stage === 'final' ? (fin ? { rule: fin.rule } : null) : seasonFor($('date').value);
     const payload = { id: subId, date: $('date').value, by: $('by').value, note: $('note').value.trim(), players: ps };
+    if (stage === 'final' && fin) { payload.stage = 'final'; payload.season_id = fin.id; }
     sending = true; $('go').disabled = true; $('go').textContent = tr('sending');
     let failed = '';
     try {
@@ -368,9 +420,12 @@
       if (res.ok) {
         try { if (payload.by) localStorage.setItem('mrml-me', payload.by); } catch (e) {}
         drawPreview($('donepreview'), pointsFor(ps, season));
+        if (payload.stage === 'final' && FIN) { FIN.games.push({ season: payload.season_id, game: (res.game || 0) }); }
+        document.querySelector('#done [data-i="savednote"]').textContent = tr(payload.stage === 'final' ? 'savedfinal' : 'savednote');
+        document.querySelector('#done a.btn2').setAttribute('href', payload.stage === 'final' ? 'index.html#view-final' : 'index.html');
         form.hidden = true; $('done').hidden = false; window.scrollTo(0, 0);
       } else {
-        const map = { bad_pin: 'e_pin', bad_total: 'e_total', duplicate_name: 'e_dup', missing_name: 'e_missing', bad_score: 'e_score', no_season: 'noseason' };
+        const map = { bad_pin: 'e_pin', bad_total: 'e_total', duplicate_name: 'e_dup', missing_name: 'e_missing', bad_score: 'e_score', no_season: 'noseason', no_final: 'nofinal' };
         failed = map[res.code] ? tr(map[res.code]) : tr('e_other', { c: res.code || '?' });
       }
     } catch (e) {

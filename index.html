@@ -478,6 +478,7 @@
       <button type="button" class="mr-tabbtn" role="tab" data-tab="view-standings" aria-controls="view-standings"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="3.5" width="7" height="7" rx="2" fill="currentColor"/><rect x="13.5" y="3.5" width="7" height="7" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><rect x="3.5" y="13.5" width="7" height="7" rx="2" fill="none" stroke="currentColor" stroke-width="1.8"/><rect x="13.5" y="13.5" width="7" height="7" rx="2" fill="currentColor"/></svg><span class="t-zh" lang="zh">赛季综合</span><span class="t-ja" lang="ja">シーズン総合</span><span class="t-en" lang="en">Season overview</span></button>
       <button type="button" class="mr-tabbtn" role="tab" data-tab="view-weekly" aria-controls="view-weekly"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="3" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 10h17M8 3v4M16 3v4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><circle cx="12" cy="15" r="1.8" fill="currentColor"/></svg><span class="t-zh" lang="zh">周赛战报</span><span class="t-ja" lang="ja">週間レポート</span><span class="t-en" lang="en">Weekly report</span></button>
       <button type="button" class="mr-tabbtn" role="tab" data-tab="view-players" aria-controls="view-players"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8.5" r="4" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M4.5 20c1.2-3.6 4-5.5 7.5-5.5s6.3 1.9 7.5 5.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg><span class="t-zh" lang="zh">个人成绩</span><span class="t-ja" lang="ja">個人成績</span><span class="t-en" lang="en">Player stats</span></button>
+      <button type="button" class="mr-tabbtn" role="tab" data-tab="view-final" aria-controls="view-final"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4h10v4a5 5 0 0 1-10 0V4z M7 6H4.5a2.5 2.5 0 0 0 2.5 3.5 M17 6h2.5a2.5 2.5 0 0 1-2.5 3.5 M12 13v4 M8.5 20h7" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg><span class="t-zh" lang="zh">决赛</span><span class="t-ja" lang="ja">決勝</span><span class="t-en" lang="en">Final</span></button>
     </nav>
     <div class="mr-navright">
       <a class="mr-enter" href="entry.html"><span class="t-zh" lang="zh">＋ 录入成绩</span><span class="t-ja" lang="ja">＋ 成績入力</span><span class="t-en" lang="en">+ Enter a game</span></a>
@@ -733,6 +734,10 @@
       </section>
     </div>
 
+    <div class="mr-view" id="view-final" role="tabpanel" hidden>
+      <div class="mr-finalbox" style="display:flex;flex-direction:column;gap:16px" data-draw="final-view" data-source="season_summary standings"></div>
+    </div>
+
     <details id="notes">
       <summary><span class="t-zh" lang="zh">数字是怎么算的</span><span class="t-ja" lang="ja">計算方法</span><span class="t-en" lang="en">How the numbers are worked out</span></summary>
       <ul>
@@ -741,6 +746,7 @@
         <li><span class="t-zh" lang="zh">表格里的罚分按原数直接加到当场积分。</span><span class="t-ja" lang="ja">シートのペナルティはそのままその対局のptに加算。</span><span class="t-en" lang="en">Penalties from the sheet are added to that game’s points as written.</span></li>
         <li><span class="t-zh" lang="zh">只有满赛季最低场次（第 3–4 季 30 场，第 5 季 25 场）的选手参加排名，排名前 4 的选手进入决赛。「落后上一名」只在排名选手之间比较。</span><span class="t-ja" lang="ja">シーズンの最低対局数（シーズン3–4は30戦、シーズン5は25戦）以上の選手のみ順位対象で、上位4名が決勝進出。「上位との差」は順位対象の選手間のみ。</span><span class="t-en" lang="en">Only players with at least the season's minimum games (30 in Seasons 3–4, 25 in Season 5) are ranked, and the top 4 ranked players make the final. Behind next compares ranked players only.</span></li>
         <li><span class="t-zh" lang="zh">剩余周数：赛季还没打的周数。每周从开幕那天的星期几算起（第 5 赛季是星期六到下星期五）；同一周里不管哪天打、打几次，都只算这一周。本周还没开打时，本周也算在内。</span><span class="t-ja" lang="ja">残り週数：まだ対局していない週の数。週は開幕と同じ曜日から始まり（シーズン5は土曜〜金曜）、同じ週内の対局は何日・何回でも1週として数えます。</span><span class="t-en" lang="en">Weeks left counts league weeks not yet played. A week starts on the season's opening weekday (Season 5: Saturday to Friday); any games inside a week, on any day, count as that one week.</span></li>
+        <li><span class="t-zh" lang="zh">决赛对局记在表格的 Final_Games 页，按赛季编号归类，不计入常规赛排名和个人数据。每季决赛用哪套规则写在 Dim_Seasons 的 final_rule_id，规则本身（起始点、返点、马点，以及按浮的人数变化的马点）写在 Dim_Rules 页。</span><span class="t-ja" lang="ja">決勝の対局はシートの Final_Games タブにシーズン番号付きで記録し、リーグ戦の順位や個人成績には含めません。各シーズンの決勝ルールは Dim_Seasons の final_rule_id、ルールの中身（持ち点・返し・ウマ、浮き人数で変わるウマ）は Dim_Rules タブに記載。</span><span class="t-en" lang="en">Final games are kept in the Final_Games tab by season number and never count toward the regular standings or player stats. Each season’s final rule is named in final_rule_id in Dim_Seasons; the rules themselves (start, return, uma, and uma that changes with how many players finish up) live in the Dim_Rules tab.</span></li>
         <li><span class="t-zh" lang="zh">对局数据实时读取 MRML 表格的 All_Games 页；赛季规则是 Dim_Seasons 页的存档副本，加上联赛的最低场次和前 4 名晋级规则。</span><span class="t-ja" lang="ja">対局データはMRMLシートのAll_Gamesタブからリアルタイムで読み込み、シーズンルールはDim_Seasonsタブの保存コピーに最低対局数の条件と上位4名の決勝ルールを加えたもの。</span><span class="t-en" lang="en">Games are read live from the All_Games tab of the MRML sheet; the season rules are a saved copy of the Dim_Seasons tab plus the league’s minimum games and top-4 final.</span></li>
       </ul>
     </details>
@@ -803,7 +809,7 @@
     };
     let t = null;
     window.addEventListener('resize', () => { clearTimeout(t); t = setTimeout(run, 150); });
-    window.addEventListener('hashchange', () => { const h = (location.hash || '').slice(1); if (/^view-(standings|weekly|players)$/.test(h)) window.dash.setParams({ view: h }); });
+    window.addEventListener('hashchange', () => { const h = (location.hash || '').slice(1); if (/^view-(standings|weekly|players|final)$/.test(h)) window.dash.setParams({ view: h }); });
   })();
 </script>
 <script>
@@ -1289,7 +1295,7 @@
     document.querySelectorAll('.mr-lang').forEach((b) => b.addEventListener('click', () => dash.setParams({ lang: b.dataset.lang })));
 
     // ---- tabs: each view has its own link (#view-weekly, #view-players)
-    const VIEWS = ['view-standings', 'view-weekly', 'view-players'];
+    const VIEWS = ['view-standings', 'view-weekly', 'view-players', 'view-final'];
     const currentView = () => (VIEWS.includes(dash.params().view) ? dash.params().view : 'view-standings');
     const fromHash = (location.hash || '').slice(1);
     if (VIEWS.includes(fromHash)) dash.setParams({ view: fromHash });
@@ -2270,6 +2276,8 @@
   })();
 </script>
 <script>dash.__start();</script>
+<script src="rules.js"></script>
+<script src="finals.js"></script>
 <script>
   // Website version: read the latest games straight from the MRML Google Sheet on every visit.
   // Falls back to the copy saved in this page if the sheet can't be read.
