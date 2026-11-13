@@ -6,6 +6,7 @@
 
 const GAMES_TAB = 'All_Games';
 const SEASONS_TAB = 'Dim_Seasons';
+const PLAYERS_TAB = 'Dim_Players';
 const SHEET_ID = '1vcRSRL1m5N8vQ11yca-mJo3MCVBbzCCBS4IUNi5240E';
 
 function doGet() {
@@ -73,6 +74,9 @@ function doPost(e) {
     // When, who entered it, and the note — in O, P, Q.
     ensureHeaders_(sh);
     sh.getRange(target, 15, 1, 3).setValues([[new Date(), String(body.by || '').trim().slice(0, 40), note]]);
+    // Mark the four players Active for this season in Dim_Players (new names get a new Player ID).
+    // (Never let this stop the game from being saved.)
+    try { markActive_(ss, season.id, players.map((p) => p.name)); } catch (err) { console.error('markActive_ failed: ' + err); }
     SpreadsheetApp.flush();
 
     if (sid) cache.put('sub:' + sid, '1', 21600);
@@ -80,6 +84,61 @@ function doPost(e) {
   } finally {
     lock.releaseLock();
   }
+}
+
+/**
+ * Dim_Players: column A Player ID, B Player Name, then one column per season headed "Season N".
+ * Sets "Active" in the game's season column for each name; adds the season column if it's missing,
+ * and adds a row (next Player ID) for a name that isn't listed yet. Names match ignoring case and spaces.
+ */
+function markActive_(ss, seasonId, names) {
+  const sh = ss.getSheetByName(PLAYERS_TAB);
+  if (!sh) return;
+  const norm = (n) => String(n || '').toLowerCase().replace(/\s+/g, '');
+  const lastCol = Math.max(sh.getLastColumn(), 2);
+  const header = sh.getRange(1, 1, 1, lastCol).getValues()[0].map((h) => String(h).trim());
+  let col = header.findIndex((h) => norm(h) === norm('Season ' + seasonId)) + 1;
+  if (!col) { col = lastCol + 1; sh.getRange(1, col).setValue('Season ' + seasonId); }
+  const n = Math.max(sh.getLastRow() - 1, 0);
+  const rows = n ? sh.getRange(2, 1, n, 2).getValues() : [];
+  let nextId = rows.reduce((m, r) => Math.max(m, Number(String(r[0]).trim()) || 0), 0) + 1;
+  const marks = n ? sh.getRange(2, col, n, 1).getValues() : [];
+  let changed = false;
+  const added = [];
+  names.forEach((name) => {
+    const i = rows.findIndex((r) => norm(r[1]) === norm(name));
+    if (i >= 0) {
+      if (i < n && String(marks[i][0]).trim() !== 'Active') { marks[i][0] = 'Active'; changed = true; }
+    } else {
+      added.push([nextId, name]);
+      rows.push([nextId, name]);
+      nextId++;
+    }
+  });
+  if (changed) sh.getRange(2, col, n, 1).setValues(marks);
+  if (added.length) {
+    const r = sh.getLastRow() + 1;
+    sh.getRange(r, 1, added.length, 2).setValues(added);
+    sh.getRange(r, col, added.length, 1).setValues(added.map(() => ['Active']));
+  }
+}
+
+/** One-off: mark Active for everyone who already has a game in each season (run once from the editor). */
+function backfillActive() {
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const tz = ss.getSpreadsheetTimeZone();
+  const seasons = ss.getSheetByName(SEASONS_TAB).getDataRange().getValues().slice(1)
+    .map((r) => ({ id: String(r[0]).trim(), start: toIso_(r[2], tz), end: toIso_(r[3], tz) })).filter((x) => x.id && x.start && x.end);
+  const games = ss.getSheetByName(GAMES_TAB).getDataRange().getValues().slice(1);
+  const bySeason = {};
+  games.forEach((g) => {
+    const iso = toIso_(g[0], tz); if (!iso) return;
+    const se = seasons.find((x) => x.start <= iso && iso <= x.end); if (!se) return;
+    (bySeason[se.id] = bySeason[se.id] || new Set());
+    [1, 4, 7, 10].forEach((c) => { const nm = String(g[c] || '').trim(); if (nm && !/^test/i.test(nm)) bySeason[se.id].add(nm); });
+  });
+  Object.keys(bySeason).forEach((id) => markActive_(ss, id, [...bySeason[id]]));
+  Logger.log(Object.keys(bySeason).map((id) => 'Season ' + id + ': ' + [...bySeason[id]].join(', ')).join('\n'));
 }
 
 function ensureHeaders_(sh) {
