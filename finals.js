@@ -230,6 +230,12 @@
     ends.forEach((e) => svg.append('text').attr('x', e.x).attr('y', e.y + 4).attr('class', 'mr-strong').style('fill', e.c).style('font-weight', 700).text(e.name));
   }
 
+  // The regular-season headline (leader, final line, weeks left) doesn't belong on the Final tab.
+  dash.onData(() => {
+    const onFinal = dash.params().view === 'view-final';
+    document.querySelectorAll('#top').forEach((h) => { h.hidden = onFinal; });
+  });
+
   // Opening the Final tab without picking a season shows the latest season that has a final.
   dash.onData(() => {
     const p = dash.params();
