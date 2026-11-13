@@ -58,6 +58,8 @@
   .p { display: grid; grid-template-columns: 26px minmax(0, 1.25fr) minmax(0, 1fr); gap: 8px; align-items: center; }
   .p .n { width: 26px; height: 26px; border-radius: 50%; display: grid; place-items: center; font-weight: 800; font-size: 13px; background: var(--green-soft); color: var(--green); }
   .p .new { grid-column: 2 / 4; }
+  .p .new.clash { border-color: var(--red); background: var(--red-soft); }
+  .p .taken { grid-column: 2 / 4; font-size: 13px; font-weight: 700; color: var(--red); line-height: 1.4; }
   .p input.score { text-align: right; font-variant-numeric: tabular-nums; }
   .p .pen { grid-column: 2 / 4; display: grid; grid-template-columns: auto 1fr; gap: 8px; align-items: center; font-size: 12px; color: var(--muted); font-weight: 700; }
   .p .pen input { padding: 6px 9px; font-size: 14px; }
@@ -215,11 +217,12 @@
     const penLab = document.createElement('span');
     const penIn = document.createElement('input'); penIn.type = 'text'; penIn.inputMode = 'decimal'; penIn.placeholder = '0';
     pen.append(penLab, penIn);
-    wrap.append(n, sel, score, nw, pen);
+    const taken = document.createElement('div'); taken.className = 'taken'; taken.hidden = true; taken.setAttribute('role', 'alert');
+    wrap.append(n, sel, score, nw, taken, pen);
     playersEl.appendChild(wrap);
-    seats.push({ sel, score, nw, pen, penLab, penIn });
+    seats.push({ sel, score, nw, taken, pen, penLab, penIn });
     sel.addEventListener('change', () => { nw.hidden = sel.value !== '__new'; if (!nw.hidden) nw.focus(); update(); });
-    [score, nw, penIn].forEach((el) => el.addEventListener('input', update));
+    [score, nw, penIn].forEach((el) => { el.addEventListener('input', update); el.addEventListener('change', update); el.addEventListener('compositionend', update); el.addEventListener('blur', update); });
   }
 
   const fillNames = () => {
@@ -311,6 +314,14 @@
     $('go').disabled = !!problem || !ENDPOINT || sending;
     lastProblem = problem;
     // Say right away when a new name is already taken (the button is greyed out, so it can't wait for submit).
+    // Warn right under the name box (on a phone the bottom of the form is off screen), and at the bottom too.
+    seats.forEach((s) => {
+      const v = s.sel.value === '__new' ? s.nw.value.trim() : '';
+      const hit = v ? names.find((n) => norm(n) === norm(v)) : null;
+      s.nw.classList.toggle('clash', !!hit);
+      s.taken.hidden = !hit;
+      if (hit) s.taken.textContent = tr('e_taken', { n: hit });
+    });
     if (problem === 'e_taken') { $('err').textContent = tr('e_taken', { n: takenNew() }); $('err').hidden = false; }
     else $('err').hidden = true;
   }
