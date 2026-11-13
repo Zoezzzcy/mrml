@@ -83,6 +83,8 @@
   textarea:focus { outline: 2px solid var(--green); border-color: transparent; }
   .need textarea { border-color: var(--red); background: var(--red-soft); }
   .hint { font-size: 12px; font-weight: 600; color: var(--muted); }
+  /* Final tab with no final set up: show only the message line. */
+  form.nofin > :not(#stage):not(#rule) { display: none !important; }
   .go { font: 800 17px var(--font); color: #fff; background: var(--red); border: 0; border-radius: 12px; padding: 14px; cursor: pointer; }
   .go:disabled { background: var(--grey); cursor: not-allowed; opacity: .7; }
   .msg { font-size: 14px; font-weight: 600; padding: 10px 12px; border-radius: 10px; }
@@ -324,6 +326,7 @@
     const iso = $('date').value;
     const fin = finalNow();
     $('finbox').hidden = stage !== 'final';
+    $('form').classList.toggle('nofin', stage === 'final' && !fin);
     document.querySelectorAll('#stage button').forEach((b) => b.setAttribute('aria-pressed', String(b.dataset.stage === stage)));
     const season = stage === 'final' ? (fin ? { rule: fin.rule, start_points: fin.rule.start } : null) : seasonFor(iso);
     $('rule').textContent = stage === 'final'
