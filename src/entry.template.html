@@ -183,6 +183,7 @@
     diffunder: ['少了 {d}', '{d} 足りない', '{d} short'],
     e_missing: ['请为四个位置都选好选手。', '4人全員の選手を選んでください。', 'Choose a player for all four seats.'],
     e_dup: ['同一个选手出现了两次。', '同じ選手が2回選ばれています。', 'The same player is chosen twice.'],
+    e_taken: ['已经有选手叫「{n}」。是同一个人就直接从列表里选；不是的话请加个区分，比如「{n} L」或昵称。', '「{n}」という選手は既にいます。同じ人ならリストから選び、別の人なら「{n} L」のように区別してください。', 'There is already a player called “{n}”. If it’s the same person, pick them from the list; if not, add something to tell them apart, e.g. “{n} L”.'],
     e_score: ['得点要填整百的数字，例如 32,400。', '持ち点は100点単位で入力してください（例：32400）。', 'Scores must be in hundreds, e.g. 32400.'],
     e_total: ['四人合计不对：请检查分数，或在备注里写明原因。', '4人合計が合いません。スコアを確認するか、備考に理由を書いてください。', 'The four scores don’t add up — check them, or explain why in the note.'],
     e_pin: ['联赛口令不对。', '合言葉が違います。', 'Wrong league code.'],
@@ -194,7 +195,7 @@
   try { const saved = localStorage.getItem('mrml-lang'); if (saved) lang = saved; else if ((navigator.language || '').startsWith('ja')) lang = 'ja'; } catch (e) {}
   if (!['zh', 'ja', 'en'].includes(lang)) lang = 'zh';
   const li = () => ({ zh: 0, ja: 1, en: 2 })[lang];
-  const tr = (k, vars) => { let s = (T[k] || [k, k, k])[li()]; if (vars) for (const [a, b] of Object.entries(vars)) s = s.replace('{' + a + '}', b); return s; };
+  const tr = (k, vars) => { let s = (T[k] || [k, k, k])[li()]; if (vars) for (const [a, b] of Object.entries(vars)) s = s.split('{' + a + '}').join(b); return s; };
   const fmt = (n) => Number(n).toLocaleString('en-US');
 
   const $ = (id) => document.getElementById(id);
@@ -236,6 +237,9 @@
   const parseScore = (v) => { const s = String(v || '').replace(/[,\s，]/g, ''); if (s === '') return null; return /^-?\d+$/.test(s) ? Number(s) : NaN; };
   const parsePen = (v) => { const s = String(v || '').replace(/[\s，]/g, '').replace('−', '-'); if (s === '') return 0; return /^-?\d+(\.\d+)?$/.test(s) ? Number(s) : NaN; };
 
+  // A "new player" name that matches someone already in the league (ignoring case and spaces).
+  const norm = (n) => String(n || '').toLowerCase().replace(/\s+/g, '');
+  const takenNew = () => { for (const s of seats) { if (s.sel.value !== '__new') continue; const v = s.nw.value.trim(); const hit = names.find((n) => norm(n) === norm(v)); if (v && hit) return hit; } return null; };
   const read = () => seats.map((s) => ({
     name: s.sel.value === '__new' ? s.nw.value.trim() : s.sel.value,
     score: parseScore(s.score.value),
@@ -285,6 +289,7 @@
     if (!season) problem = 'noseason';
     else if (ps.some((p) => !p.name)) problem = 'e_missing';
     else if (new Set(ps.map((p) => p.name.toLowerCase())).size < 4) problem = 'e_dup';
+    else if (takenNew()) problem = 'e_taken';
     else if (ps.some((p) => p.score === null || !Number.isFinite(p.score) || p.score % 100 !== 0 || !Number.isFinite(p.penalty))) problem = 'e_score';
     const note = $('note').value.trim();
     const unbalanced = !!season && total !== season.start_points * 4;
@@ -305,7 +310,9 @@
     by.value = chosen.includes(cur) ? cur : (chosen.includes(remembered) ? remembered : (chosen[0] || ''));
     $('go').disabled = !!problem || !ENDPOINT || sending;
     lastProblem = problem;
-    $('err').hidden = true;
+    // Say right away when a new name is already taken (the button is greyed out, so it can't wait for submit).
+    if (problem === 'e_taken') { $('err').textContent = tr('e_taken', { n: takenNew() }); $('err').hidden = false; }
+    else $('err').hidden = true;
   }
 
   function applyLang() {
@@ -336,7 +343,7 @@
     ev.preventDefault();
     update();
     const err = $('err');
-    if (lastProblem) { err.textContent = tr(lastProblem); err.hidden = false; return; }
+    if (lastProblem) { err.textContent = tr(lastProblem, { n: takenNew() || '' }); err.hidden = false; return; }
     if (!ENDPOINT || sending) return;
     const ps = read();
     const season = seasonFor($('date').value);
