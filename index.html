@@ -607,7 +607,7 @@
           </div>
           <div class="mr-board" id="board-tops">
             <h3><span class="t-zh" lang="zh">最多一位</span><span class="t-ja" lang="ja">最多トップ</span><span class="t-en" lang="en">Most 1sts</span></h3>
-            <p class="mr-bnote"><span class="t-zh" lang="zh">一位次数（同分算半次）</span><span class="t-ja" lang="ja">トップ回数（同点は0.5）</span><span class="t-en" lang="en">1st places (a tie counts as half)</span></p>
+            <p class="mr-bnote"><span class="t-zh" lang="zh">一位次数（同分并列一位都算）</span><span class="t-ja" lang="ja">トップ回数（同点トップも1回）</span><span class="t-en" lang="en">1st places (a shared 1st counts)</span></p>
             <div class="mr-bbody" data-draw="board-tops" data-source="standings"></div>
           </div>
         </div>
@@ -737,7 +737,7 @@
       <summary><span class="t-zh" lang="zh">数字是怎么算的</span><span class="t-ja" lang="ja">計算方法</span><span class="t-en" lang="en">How the numbers are worked out</span></summary>
       <ul>
         <li><span class="t-zh" lang="zh">每场积分 =（终局得点 − 起始点）÷ 1000 + 顺位马点 + 罚分。起始点和马点按赛季规则：第 3–4 季 30,000 起，+30 / +10 / −10 / −30；第 5 季 25,000 起，+45 / +5 / −15 / −35。</span><span class="t-ja" lang="ja">各対局のpt =（終局点 − 持ち点）÷ 1000 + 順位ウマ + ペナルティ。持ち点とウマはシーズンのルールに従う：シーズン3–4は30,000点持ち、+30 / +10 / −10 / −30、シーズン5は25,000点持ち、+45 / +5 / −15 / −35。</span><span class="t-en" lang="en">Points per game = (final score − starting points) ÷ 1,000 + placement bonus + penalties, using each season's rules (Season 3–4: 30,000 start, +30 / +10 / −10 / −30; Season 5: 25,000 start, +45 / +5 / −15 / −35).</span></li>
-        <li><span class="t-zh" lang="zh">同分的选手平分所并列名次的马点，名次次数也各算一半。</span><span class="t-ja" lang="ja">同点の選手は該当順位のウマを均等に分け、順位回数も按分。</span><span class="t-en" lang="en">Players tied on score share the placements they tie for: their bonuses are averaged and the placement counts are split.</span></li>
+        <li><span class="t-zh" lang="zh">同分的选手平分所并列名次的马点；名次都算较高的那一位（例如两人同分第 2，就都是 2 位，没有 3 位，最后一人是 4 位）。</span><span class="t-ja" lang="ja">同点の選手は該当順位のウマを均等に分けます。順位は上位側を共有します（2位タイなら2人とも2位、3位は空き、最下位は4位）。</span><span class="t-en" lang="en">Tied players split the bonus for the places they share, but both take the higher place (two tied for 2nd are both 2nd, there is no 3rd, and the last player is 4th).</span></li>
         <li><span class="t-zh" lang="zh">表格里的罚分按原数直接加到当场积分。</span><span class="t-ja" lang="ja">シートのペナルティはそのままその対局のptに加算。</span><span class="t-en" lang="en">Penalties from the sheet are added to that game’s points as written.</span></li>
         <li><span class="t-zh" lang="zh">只有满赛季最低场次（第 3–4 季 30 场，第 5 季 25 场）的选手参加排名，排名前 4 的选手进入决赛。「落后上一名」只在排名选手之间比较。</span><span class="t-ja" lang="ja">シーズンの最低対局数（シーズン3–4は30戦、シーズン5は25戦）以上の選手のみ順位対象で、上位4名が決勝進出。「上位との差」は順位対象の選手間のみ。</span><span class="t-en" lang="en">Only players with at least the season's minimum games (30 in Seasons 3–4, 25 in Season 5) are ranked, and the top 4 ranked players make the final. Behind next compares ranked players only.</span></li>
         <li><span class="t-zh" lang="zh">剩余周数：赛季还没打的周数。每周从开幕那天的星期几算起（第 5 赛季是星期六到下星期五）；同一周里不管哪天打、打几次，都只算这一周。本周还没开打时，本周也算在内。</span><span class="t-ja" lang="ja">残り週数：まだ対局していない週の数。週は開幕と同じ曜日から始まり（シーズン5は土曜〜金曜）、同じ週内の対局は何日・何回でも1週として数えます。</span><span class="t-en" lang="en">Weeks left counts league weeks not yet played. A week starts on the season's opening weekday (Season 5: Saturday to Friday); any games inside a week, on any day, count as that one week.</span></li>
@@ -858,7 +858,8 @@
           let bonus = 0;
           for (let p = i; p <= j; p++) bonus += season.bonus[p];
           bonus /= (j - i + 1);
-          for (let p = i; p <= j; p++) { order[p].place = (i + j) / 2 + 1; order[p].bonus = bonus; }
+          // Tied players share the bonus equally, but each keeps the higher place (two tied for 2nd are both 2nd; 3rd is skipped).
+          for (let p = i; p <= j; p++) { order[p].place = i + 1; order[p].bonus = bonus; }
           i = j + 1;
         }
         for (const s of seats) {

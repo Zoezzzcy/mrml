@@ -258,7 +258,7 @@
     while (pos < 4) {
       let j = pos; while (j + 1 < 4 && order[j + 1].score === order[pos].score) j++;
       const share = uma.slice(pos, j + 1).reduce((a, b) => a + b, 0) / (j - pos + 1);
-      for (let q = pos; q <= j; q++) { order[q].place = (pos + j) / 2 + 1; order[q].pts = Math.round(((order[q].score - season.start_points) / 1000 + share + order[q].penalty) * 10) / 10; }
+      for (let q = pos; q <= j; q++) { order[q].place = pos + 1; order[q].pts = Math.round(((order[q].score - season.start_points) / 1000 + share + order[q].penalty) * 10) / 10; }
       pos = j + 1;
     }
     return order;
