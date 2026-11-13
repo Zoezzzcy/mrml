@@ -166,7 +166,7 @@
     newname: ['新选手名字', '新しい選手名', 'New player name'],
     addpen: ['＋ 有罚分', '＋ ペナルティあり', '+ Add penalties'],
     hidepen: ['− 收起罚分', '− ペナルティを閉じる', '− Hide penalties'],
-    pen: ['罚分 pt', 'ペナルティ pt', 'Penalty pt'],
+    pen: ['罚分（自动扣除）pt', 'ペナルティ（自動で減点）pt', 'Penalty (deducted) pt'],
     total: ['四人合计', '4人合計', 'Total of four'],
     by: ['谁在录入', '入力者', 'Entered by'],
     note: ['备注（可选：犯规、错和、供托等）', '備考（任意：チョンボ・供託など）', 'Note (optional: foul, chombo, sticks left…)'],
@@ -215,7 +215,7 @@
     const nw = document.createElement('input'); nw.className = 'new'; nw.type = 'text'; nw.hidden = true; nw.maxLength = 40;
     const pen = document.createElement('label'); pen.className = 'pen'; pen.hidden = true;
     const penLab = document.createElement('span');
-    const penIn = document.createElement('input'); penIn.type = 'text'; penIn.inputMode = 'decimal'; penIn.placeholder = '0';
+    const penIn = document.createElement('input'); penIn.type = 'text'; penIn.inputMode = 'decimal'; penIn.placeholder = '';
     pen.append(penLab, penIn);
     const taken = document.createElement('div'); taken.className = 'taken'; taken.hidden = true; taken.setAttribute('role', 'alert');
     wrap.append(n, sel, score, nw, taken, pen);
@@ -238,7 +238,8 @@
 
   const seasonFor = (iso) => SEASONS.find((s) => s.start <= iso && iso <= s.end) || null;
   const parseScore = (v) => { const s = String(v || '').replace(/[,\s，]/g, ''); if (s === '') return null; return /^-?\d+$/.test(s) ? Number(s) : NaN; };
-  const parsePen = (v) => { const s = String(v || '').replace(/[\s，]/g, '').replace('−', '-'); if (s === '') return 0; return /^-?\d+(\.\d+)?$/.test(s) ? Number(s) : NaN; };
+  // Phone number pads have no minus key, so a penalty is typed as a plain number and always deducted (20 → −20).
+  const parsePen = (v) => { const s = String(v || '').replace(/[\s，]/g, '').replace('−', '-').replace('－', '-'); if (s === '') return 0; return /^-?\d+(\.\d+)?$/.test(s) ? -Math.abs(Number(s)) : NaN; };
 
   // A "new player" name that matches someone already in the league (ignoring case and spaces).
   const norm = (n) => String(n || '').toLowerCase().replace(/\s+/g, '');
